@@ -13,8 +13,12 @@ public class TransferValidator {
         this.accountManager = accountManager;
     }
 
-    public void validate(TransferRequest request) {
-        if (request.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
+    public void validate(String idempotencyKey, TransferRequest request) {
+        if (idempotencyKey == null || idempotencyKey.isEmpty()) {
+            throw new ValidationException("Idempotency-Key header is missing or empty");
+        }
+
+        if (request.getAmount() == null || request.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
             throw new ValidationException("Transfer amount must be positive");
         }
 
@@ -22,8 +26,8 @@ public class TransferValidator {
             throw new ValidationException("Cannot transfer money to the same account");
         }
 
-        Account fromAccount = accountManager.getSegmentByAccountId(request.getFromAccountId()).getAccount(request.getFromAccountId());
-        Account toAccount = accountManager.getSegmentByAccountId(request.getToAccountId()).getAccount(request.getToAccountId());
+        Account fromAccount = accountManager.getAccount(request.getFromAccountId());
+        Account toAccount = accountManager.getAccount(request.getToAccountId());
 
         if (fromAccount == null) {
             throw new ValidationException("From account does not exist");

@@ -45,8 +45,11 @@ public class AccountController {
         try {
             logger.info("Received request: from {}, to {}, amount {}",
                     request.getFromAccountId(), request.getToAccountId(), request.getAmount());
-            transferValidator.validate(request);
-            boolean success = accountManager.transferMoney(idempotencyKey, request.getFromAccountId(), request.getToAccountId(), request.getAmount());
+
+            transferValidator.validate(idempotencyKey, request);
+
+            boolean success = accountManager.transferMoney(idempotencyKey, request.getFromAccountId(),
+                    request.getToAccountId(), request.getAmount());
 
             if (success) {
                 return Response.ok("Transaction Successful").build();
@@ -55,8 +58,13 @@ public class AccountController {
                         .entity("Transaction Failed").build();
             }
         } catch (ValidationException e) {
+            logger.error("Validation error: {}", e.getMessage());
             return Response.status(Response.Status.BAD_REQUEST)
                     .entity(e.getMessage()).build();
+        } catch (Exception e) {
+            logger.error("Internal server error: {}", e.getMessage());
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity("Internal Server Error").build();
         }
     }
 }
